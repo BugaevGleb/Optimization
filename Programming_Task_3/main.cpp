@@ -1,9 +1,7 @@
 #include <iostream>
 #include <vector>
-#include <iomanip>
 #include <float.h>
 #include "cmath"
-#include "windows.h"
 
 using namespace std;
 
@@ -20,7 +18,7 @@ public:
         this->n = n;
         this->m = m;
         // Allocate memory for the matrix
-        matrix = (double**) malloc(n * sizeof(double *));
+        matrix = (double **) malloc(n * sizeof(double *));
         for (int i = 0; i < n; i++) {
             matrix[i] = (double *) malloc(m * sizeof(double));
         }
@@ -304,7 +302,6 @@ Matrix NorthWestCorner(ColumnVector S, Matrix C, ColumnVector D) {
 }
 
 
-
 vector<double> analyzeRowAndColumnDiff(Matrix C, vector<bool> rowReady, vector<bool> columnReady) {
     auto row_diff = DBL_MIN, col_diff = DBL_MIN;
     int row_number = -1, col_number = -1;
@@ -371,7 +368,7 @@ Matrix VogelApproximation(ColumnVector S, Matrix C, ColumnVector D) {
         int min_x, min_y;
         double row_diff, col_diff;
         int row_number, col_number;
-        vector<double> stats =  analyzeRowAndColumnDiff(C, rowReady, columnReady);
+        vector<double> stats = analyzeRowAndColumnDiff(C, rowReady, columnReady);
         row_diff = stats[0];
         col_diff = stats[1];
         row_number = (int) stats[2];
@@ -485,14 +482,14 @@ Matrix RusselApproximation(ColumnVector S, Matrix C, ColumnVector D) {
 void print_initial(ColumnVector S, Matrix C, ColumnVector D) {
     cout << "\t";
     for (int i = 0; i < D.getN(); i++) {
-        cout << i+1 << "\t";
+        cout << i + 1 << "\t";
     }
     cout << "supply\n";
     for (int i = 0; i < S.getN(); i++) {
-        cout << i+1 << "\t";
+        cout << i + 1 << "\t";
         for (int j = 0; j < C.getM(); j++) {
             cout << C[i][j] << "\t";
-            }
+        }
         cout << S[i] << "\n";
     }
     cout << "demand\t";
@@ -507,15 +504,48 @@ double computeZ(Matrix solution, Matrix C) {
     double Z = 0;
     for (int i = 0; i < solution.getN(); i++) {
         for (int j = 0; j < solution.getM(); j++) {
-            Z+=solution[i][j]*C[i][j];
+            Z += solution[i][j] * C[i][j];
         }
     }
     return Z;
 }
 
 
+bool checkBalance(ColumnVector S, ColumnVector D) {
+    double sum1 = 0, sum2 = 0;
+    for (int i = 0; i < S.getN(); i++) {
+        sum1 += S[i];
+    }
+    for (int i = 0; i < D.getN(); i++) {
+        sum2 += D[i];
+    }
+    return sum1 == sum2;
+}
+
+bool checkApplicability(ColumnVector S, ColumnVector D, Matrix C) {
+    for (int i = 0; i < S.getN(); i++) {
+        if (S[i] < 0) {
+            return false;
+        }
+    }
+    for (int i = 0; i < D.getN(); i++) {
+        if (D[i] < 0) {
+            return false;
+        }
+    }
+    for (int i = 0; i < C.getN(); i++) {
+        for (int j = 0; j < C.getM(); j++) {
+            if (C[i][j] < 0) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
 int main() {
-    int n=3, m=4;
+    int n = 3, m = 4;
     ColumnVector S1(n);
     ColumnVector D1(m);
     Matrix C(n, m);
@@ -526,10 +556,18 @@ int main() {
     cout << "Enter demand vector:\n";
     cin >> D1;
     print_initial(S1, C, D1);
+    if (!checkApplicability(S1, D1, C)) {
+        cout << "This method is not applicable!";
+        return 0;
+    }
+    if (!checkBalance(S1, D1)) {
+        cout << "The problem is not balanced!";
+        return 0;
+    }
     Matrix answer1 = NorthWestCorner(S1, C, D1);
     Matrix answer2 = VogelApproximation(S1, C, D1);
     Matrix answer3 = RusselApproximation(S1, C, D1);
-    cout << "North-West Corner rule:\n"<< answer1 << "Z = " << computeZ(answer1, C) <<"\n\n";
-    cout << "Vogel's Approximation:\n" << answer2 << "Z = " << computeZ(answer2, C) <<"\n\n";
-    cout << "Russel's Approximation:\n" << answer3 << "Z = " << computeZ(answer3, C) <<"\n\n";
+    cout << "North-West Corner rule:\n" << answer1 << "Z = " << computeZ(answer1, C) << "\n\n";
+    cout << "Vogel's Approximation:\n" << answer2 << "Z = " << computeZ(answer2, C) << "\n\n";
+    cout << "Russel's Approximation:\n" << answer3 << "Z = " << computeZ(answer3, C) << "\n\n";
 }
